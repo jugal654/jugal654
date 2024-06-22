@@ -1,0 +1,175 @@
+from tkinter import *
+from tkinter import ttk
+import messagebox
+import pymysql
+
+def show():
+    con=pymysql.connect(host="localhost",user="root",password="",database="stm")
+    cur=con.cursor()
+    try:
+        cur.execute("select * from students")
+        rows=cur.fetchall()
+        stabel.delete(stabel.get_children())
+        for row in rows:
+            stabel.insert('',END,values=row)
+    except Exception as ex:
+        messagebox.showerror("error",f"error due to {str(ex)}")
+def getdata(ev):
+    curosor=stabel.focus()
+    contents=stabel.item(curosor)
+    row=contents['values']
+    Roll_No_var.set(row[0])
+    name_var.set(row[1])
+    email_var.set(row[2])
+    gender_var.set(row[3])
+    contact_var.set(row[4])
+
+
+def fetchdata():
+    con=pymysql.connect(host="localhost",user="root",password="",database="stm")
+    cur=con.cursor()
+    cur.execute("select*from students")
+    rows=cur.fetchall()
+    if len(rows)!=0:
+        stabel.delete(*stabel.get_children())
+        for row in rows:
+            stabel.insert('',END,values=row)
+            con.commit()
+    con.close()
+
+
+#ttk for tree view of data
+root=Tk()
+Roll_No_var=StringVar()
+name_var=StringVar()
+email_var=StringVar()
+gender_var=StringVar()
+contact_var=StringVar()
+def newpage():
+    global search_by
+    global search
+    global f1
+    f1=Frame(root,width=1000,height=500,bg="skyblue",borderwidth=50)
+    Label(f1,text="roll no",font=("roman 20"),bg="skyblue").place(x=10,y=10)
+    re=Entry(f1,font=("c 20 bold"),textvariable=Roll_No_var).place(x=100,y=10)
+
+    Label(f1, text="Name", font=("roman 20"), bg="skyblue").place(x=10, y=90)
+    ne = Entry(f1, font=("c 20 bold"), textvariable=name_var).place(x=100, y=90)
+
+    Label(f1, text="email", font=("roman 20"), bg="skyblue").place(x=10, y=180)
+    ne = Entry(f1, font=("c 20 bold"), textvariable=email_var).place(x=100, y=180)
+
+    Label(f1, text="gender", font=("roman 20"), bg="skyblue").place(x=10, y=270)
+    ne = Entry(f1, font=("c 20 bold"), textvariable=gender_var).place(x=100, y=270)
+
+    Label(f1, text="contact", font=("roman 20"), bg="skyblue").place(x=10, y=360)
+    ne = Entry(f1, font=("c 20 bold"), textvariable=contact_var).place(x=100, y=360)
+    f1.place(x=250,y=200)
+
+    search_by=StringVar()
+    search=StringVar()
+    directsearch=StringVar()
+    Button(f1,text="search",font=("comicsm 20 bold"),bg="skyblue",command=searchdata).place(x=450,y=200)
+    Entry(f1, textvariable=search, font="c 30 bold").place(x=600, y=200)
+    Label(f1,text="search by",font="c 20 bold",fg="red",bg="skyblue").place(x=500,y=100)
+    ttk.Combobox(f1,value=("Roll_no","Name","Contact"),font="roman 20 bold",state='readonly',textvariable=search_by).place(x=650, y=100)
+    Button(f1,text="show all data",command=show,font=("c 20 bold"),bg="yellow",width=10).place(x=650,y=300)
+
+
+    Button(f1,text="Add",font=("c 20 bold"),bg="skyblue",fg="black",command=adddata).place(x=500,y=10)
+    Button(f1,text="update",font=("c 20 bold"),bg="skyblue",fg="black",command=updatedata).place(x=600,y=10)
+    Button(f1,text="delete",font=("c 20 bold"),bg="skyblue",fg="black",command=deletedata).place(x=730,y=10)
+    Button(f1,text="clear",font=("c 20 bold"),bg="skyblue",fg="black",command=clear).place(x=850,y=10)
+
+def dele():
+    f1.destroy()
+root.geometry("1500x800")
+root.title("database with my sql")
+root.configure(bg="skyblue")
+Label(root,text="Database system",font=("Airal 50 bold"),fg="black",bg="skyblue").pack()
+Button(root,text="make-change",bg="skyblue",bd=0,fg="black",font=("comicsm 10 bold"),width=10,command=newpage).place(x=10,y=10)
+Button(root,text="exit",bg="skyblue",fg="black",bd=0,font=("comicsm 10 bold"),width=10,command=dele).place(x=0,y=40)
+
+#========================tabel frame==============================
+def main():
+    global stabel
+    scrollx=Scrollbar(root,orient=HORIZONTAL)
+    scrolly=Scrollbar(root,orient=VERTICAL)
+    scrollx.pack(side=BOTTOM,fill=X)
+    scrolly.pack(side=RIGHT,fill=Y)
+
+    stabel=ttk.Treeview(root,columns=("roll","name","email","gender","contact"),xscrollcommand=scrollx.set,yscrollcommand=scrolly.set)
+    scrollx.config(command=stabel.xview)
+    scrolly.config(command=stabel.yview)
+    stabel.heading("roll",text="Roll No")
+    stabel.heading("name",text="Name")
+    stabel.heading("email",text="Email")
+    stabel.heading("gender",text="Gender")
+    stabel.heading("contact",text="Contact")
+    stabel['show']='headings'
+    stabel.column("roll", width=100)
+    stabel.column("name",width=100)
+    stabel.column("email",width=100)
+    stabel.column("gender", width=100)
+    stabel.column("contact", width=100)
+    fetchdata()
+    stabel.pack(fill=BOTH,expand=1)
+    stabel.bind('<ButtonRelease-1>',getdata)
+main()
+
+def clear():
+    Roll_No_var.set("")
+    name_var.set("")
+    email_var.set("")
+    gender_var.set("")
+    contact_var.set("")
+
+def adddata():
+    con=pymysql.connect(host="localhost",user="root",password="",database="stm")
+    cur=con.cursor()
+    cur.execute("insert into students values(%s,%s,%s,%s,%s)",(
+        Roll_No_var.get(),
+        name_var.get(),
+        email_var.get(),
+        gender_var.get(),
+        contact_var.get()
+    ))
+    con.commit()
+    fetchdata()
+    con.close()
+
+def deletedata():
+    con=pymysql.connect(host="localhost",user="root",password="",database="stm")
+    cur=con.cursor()
+    cur.execute("delete from students where roll_no=%s",Roll_No_var.get())
+    con.commit()
+    con.close()
+    fetchdata()
+
+def updatedata():
+    con=pymysql.connect(host="localhost",user="root",password="",database="stm")
+    cur=con.cursor()
+    cur.execute("update students set name=%s,email=%s,gender=%s,contact=%s where roll_no=%s",(
+        name_var.get(),
+        email_var.get(),
+        gender_var.get(),
+        contact_var.get(),
+        Roll_No_var.get()
+        ))
+    con.commit()
+    fetchdata()
+    con.close()
+
+def searchdata():
+    con=pymysql.connect(host="localhost",user="root",password="",database="stm")
+    cur=con.cursor()
+    cur.execute("select*from students where "+str(search_by.get())+" LIKE   '%"+str(search.get())+"%' ")
+    rows=cur.fetchall()
+    if len(rows)!=0:
+        stabel.delete(*stabel.get_children())
+        for row in rows:
+            stabel.insert('',END,values=row)
+            con.commit()
+    con.close()
+
+root.mainloop()
